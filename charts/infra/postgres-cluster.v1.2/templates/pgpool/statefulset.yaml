@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Values.app.name }}-pgpool
+spec:
+  serviceName: {{ .Values.app.name }}-pgpool
+  replicas: 1  # Обычно Pgpool-II работает в одном экземпляре
+  selector:
+    matchLabels:
+      app: {{ .Values.app.name }}-pgpool
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.app.name }}-pgpool
+    spec:
+      containers:
+      - name: pgpool
+        image: bitnami/pgpool:4.5.0-debian-11-r8  # Образ Pgpool-II от Bitnami
+        ports:
+          - containerPort: 5432
+        env:
+          - name: PGPOOL_ADMIN_USERNAME
+            value: postgres  # Администратор Pgpool-II
+          - name: PGPOOL_ADMIN_PASSWORD
+            value: postgres  # Пароль администратора Pgpool-II
+          - name: PGPOOL_SR_CHECK_USER
+            value: postgres  # Пользователь для проверки состояния репликации
+          - name: PGPOOL_SR_CHECK_PASSWORD
+            value: postgres  # Пароль для репликации
+          - name: PGPOOL_HEALTH_CHECK_USER
+            value: postgres  # Пользователь для проверки состояния
+          - name: PGPOOL_HEALTH_CHECK_PASSWORD
+            value: postgres  # Пароль для проверки состояния
+          - name: PGPOOL_POSTGRES_USERNAME
+            value: postgres  # Пароль для проверки состояния
+          - name: PGPOOL_POSTGRES_PASSWORD
+            value: postgres  # Пароль для проверки состояния
+          - name: PGPOOL_BACKEND_NODES
+            value: |
+              {{- $replicaCount := .Values.postgres.replicas | int }}
+              {{- $backendList := printf "0:%s-master-service:5432" $.Values.app.name }}
+              {{- range $i := until $replicaCount }}
+              {{- $backendList = printf "%s,%d:%s-replica-service-%d:5432" $backendList (add $i 1) $.Values.app.name $i }}
+              {{- end }}
+              {{ $backendList }}
+        volumeMounts:
+          - name: {{ .Values.app.name }}-pgpool-config-volume
+            mountPath: /etc/pgpool
+            readOnly: true
+      volumes:
+        - name: {{ .Values.app.name }}-pgpool-config-volume
+          configMap:
+            name: {{ .Values.app.name }}-pgpool-config

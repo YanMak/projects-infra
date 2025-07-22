@@ -1,0 +1,16 @@
+{{- $replicaCount := .Values.postgres.replicas | int }}
+{{- range $i := until $replicaCount }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $.Values.app.name }}-replica-service-{{ $i }}
+spec:
+  ports:
+    - port: {{ $.Values.postgres.port }}
+      targetPort: {{ $.Values.postgres.port }}
+  clusterIP: None  # Указание на Headless Service для StatefulSet
+  selector:       
+    app: {{ $.Values.app.name }}-postgres
+    role: replica-{{ $i }}
+---    
+{{- end }}

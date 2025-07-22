@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.app.name }}-pgpool-config
+data:
+  pgpool.conf: |
+    listen_addresses = '*'
+    port = 5432
+    backend_hostname0 = '{{ .Values.app.name }}-master-service'
+    backend_port0 = 5432
+    backend_weight0 = 1
+ 

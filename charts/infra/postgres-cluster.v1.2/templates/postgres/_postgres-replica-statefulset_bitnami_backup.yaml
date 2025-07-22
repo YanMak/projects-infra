@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Values.app.name }}-replica-0
+spec:
+  serviceName: {{ .Values.app.name }}-replica-0
+  replicas: 1  # Укажите количество реплик
+  selector:
+    matchLabels:
+      app: {{ .Values.app.name }}-postgres
+      role: replica-0
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.app.name }}-postgres
+        role: replica-0
+    spec:
+      containers:
+      - name: postgres
+        image: "{{ .Values.postgres.replica.image }}:{{ .Values.postgres.replica.imageVersion }}"
+        ports:
+          - containerPort: {{ .Values.postgres.port }}
+        env:
+          - name: POSTGRESQL_DATABASE
+            value: {{ .Values.postgres.db }}
+          - name: POSTGRES_DB
+            value: {{ .Values.postgres.db }}   
+          - name: POSTGRESQL_PASSWORD
+            value: {{ .Values.users.db.password }} 
+          - name: POSTGRESQL_USER
+            value: {{ .Values.users.db.username }} 
+          - name: POSTGRESQL_USERNAME
+            value: {{ .Values.postgres.db }} 
+          - name: PGPOOL_ADMIN_USERNAME
+            value: {{ .Values.users.pgpoolAdmin.username }}
+          - name: PGPOOL_ADMIN_PASSWORD
+            value: {{ .Values.users.pgpoolAdmin.password }}
+          - name: PGPOOL_SR_CHECK_USER
+            value: {{ .Values.users.srCheck.username }}
+          - name: PGPOOL_SR_CHECK_PASSWORD
+            value: {{ .Values.users.srCheck.password }}
+          - name: PGPOOL_HEALTH_CHECK_USER
+            value: {{ .Values.users.healthCheck.username }}
+          - name: PGPOOL_HEALTH_CHECK_PASSWORD
+            value: {{ .Values.users.healthCheck.password }} 
+          - name: POSTGRESQL_REPLICATION_MODE
+            value: "slave"  # Используйте "standby" для обозначения режима репликации
+          - name: POSTGRESQL_REPLICATION_USER
+            value: {{ .Values.users.replication.username }}  # Пользователь для репликации
+          - name: POSTGRESQL_REPLICATION_PASSWORD
+            value: {{ .Values.users.replication.password }}  # Пароль для пользователя репликации
+          - name: POSTGRESQL_MASTER_HOST
+            value: "pg-cluster-master-service"
+          - name: POSTGRESQL_MASTER_PORT_NUMBER # got from https://github.com/bitnami/containers/blob/main/bitnami/postgresql/README.md?ysclid=m6pg9ua15x689552945
+            value: "5432"  
+        volumeMounts:
+          - name: {{ .Values.app.name }}-storage
+            mountPath: /var/lib/postgresql/data
+          - name: {{ .Values.app.name }}-replica-config-volume
+            mountPath: /etc/postgresql/recovery.conf
+            subPath: recovery.conf
+            readOnly: true
+          - name: {{ .Values.app.name }}-replica-config-volume
+            mountPath: /etc/postgresql/postgresql.conf
+            subPath: postgresql.conf
+            readOnly: true
+      volumes:
+        - name: {{ .Values.app.name }}-replica-config-volume
+          configMap:
+            name: {{ .Values.app.name }}-replica-config
+
+  volumeClaimTemplates:
+    - metadata:
+        name: {{ .Values.app.name }}-storage
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: {{ .Values.postgres.pvc.resources.requests.storage | quote }}

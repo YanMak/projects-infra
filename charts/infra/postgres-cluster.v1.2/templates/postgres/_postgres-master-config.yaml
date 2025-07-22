@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.app.name }}-master-config
+data:
+  postgresql.conf: |
+    wal_level = replica
+    max_wal_senders = 10  # Число реплик
+    wal_keep_segments = 64
+    hot_standby = on
+  pg_hba.conf: |
+    {{- $replicaCount := .Values.postgres.replicas | int }}
+    {{- range $i := until $replicaCount }}
+    host    replication     {{ $.Values.users.replication.username }}       {{ $.Values.app.name }}-replica-service-{{ $i }} /32         md5
+    host    replication     {{ $.Values.users.replication.username }}       {{ $.Values.app.name }}-replica-{{ $i }}-{{ $i }} /32         md5
+    host    replication     {{ $.Values.users.replication.username }}       10.244.0.187 /32         md5
+    {{- end }}

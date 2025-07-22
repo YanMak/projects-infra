@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.app.name }}-pgpool-config
+data:
+  pgpool.conf: |
+    listen_addresses = '*'
+    port = {{ $.Values.postgres.port }}
+
+    backend_hostname0 = '{{ $.Values.app.name }}-master-service'  # Укажите имя сервиса базы данных
+    backend_port0 = {{ $.Values.postgres.port }}
+    backend_weight0 = 1
+
+    #backend_hostname1 = 'pg-cluster-replica-service-0'  # Укажите имя сервиса базы данных
+    #backend_port1 = {{ $.Values.postgres.port }}
+    #backend_weight1 = 1
+
+    {{- $replicaCount := .Values.postgres.replicas | int }}
+    {{- range $i := until $replicaCount }}
+    backend_hostname{{ add $i 1 }} = '{{ $.Values.app.name }}-replica-service-{{ $i }}'
+    backend_port{{ add $i 1 }} = {{ $.Values.postgres.port }}
+    backend_weight{{ add $i 1 }} = 1   
+    {{- end }}

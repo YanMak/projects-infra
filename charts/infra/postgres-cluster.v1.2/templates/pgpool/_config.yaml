@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pgpool-config
+data:
+  pgpool.conf: |
+    listen_addresses = '*'
+    port = 5432
+
+    backend_hostname0 = 'pg-cluster-master-service'  # Укажите имя сервиса базы данных
+    backend_port0 = 5432
+    backend_weight0 = 1
+
+    backend_hostname1 = 'pg-cluster-replica-service-0'  # Укажите имя сервиса базы данных
+    backend_port1 = 5432
+    backend_weight1 = 1

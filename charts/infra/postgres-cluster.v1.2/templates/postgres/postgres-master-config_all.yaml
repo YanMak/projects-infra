@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.app.name }}-master-config
+data:
+  postgresql.conf: |
+    wal_level = replica
+    max_wal_senders = 10  # Число реплик
+    wal_keep_segments = 64
+    hot_standby = on
+  pg_hba.conf: |
+    # TYPE  DATABASE        USER            ADDRESS                 METHOD
+    # Разрешить всем репликам подключение для репликации
+    host    replication     all             0.0.0.0/0               md5
+
+    # Разрешить подключения для всех баз данных от всех пользователей
+    host    all             all             0.0.0.0/0               md5
+
+    {{- $replicaCount := .Values.postgres.replicas | int }}
+    {{- range $i := until $replicaCount }}
+    host    replication     {{ $.Values.users.replication.username }}       {{ $.Values.app.name }}-replica-service-{{ $i }}         md5  # for service
+    host    replication     {{ $.Values.users.replication.username }}       {{ $.Values.app.name }}-replica-{{ $i }}-0         md5 # for pod
+    {{- end }}

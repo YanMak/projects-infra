@@ -1,0 +1,3 @@
+creation_rules:
+# As failover encrypt with PGP
+        - pgp: 'B1D277932AEB0C3FFFBB1CD96397F2AEFCFF2C19'

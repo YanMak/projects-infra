@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.app.name }}-replica-config
+data:
+  postgresql.conf: |
+    hot_standby = on
+
+  recovery.conf: |
+    standby_mode = 'on'
+    primary_conninfo = 'host={{ .Values.app.name }}-master-service port=5432 user={{ .Values.users.replication.username }} password={{ .Values.users.replication.password }}'
+    trigger_file = '/tmp/postgresql.trigger.5432'

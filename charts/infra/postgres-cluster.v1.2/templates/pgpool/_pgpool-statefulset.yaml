@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Values.app.name }}-pgpool
+spec:
+  serviceName: {{ .Values.app.name }}-pgpool
+  replicas: 1  # Обычно Pgpool-II имеет один экземпляр
+  selector:
+    matchLabels:
+      app: {{ .Values.app.name }}-pgpool
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.app.name }}-pgpool
+    spec:
+      containers:
+      - name: pgpool
+        image: {{ .Values.pgpool.image }}:{{ .Values.pgpool.imageVersion }}
+        ports:
+          - containerPort: 5432
+        env:
+          - name: PGPOOL_ADMIN_USERNAME
+            value: {{ .Values.pgpool.admin.username }}
+          - name: PGPOOL_ADMIN_PASSWORD
+            value: {{ .Values.pgpool.admin.password }}
+          - name: POSTGRESQL_DATABASE
+            value: {{ .Values.postgres.db }}
+          - name: POSTGRES_DB
+            value: {{ .Values.postgres.db }}   
+          - name: POSTGRESQL_PASSWORD
+            value: {{ .Values.users.db.password }} 
+          - name: POSTGRESQL_USER
+            value: {{ .Values.users.db.username }} 
+          - name: POSTGRESQL_USERNAME
+            value: {{ .Values.postgres.db }} 
+          - name: PGPOOL_ADMIN_USERNAME
+            value: {{ .Values.users.pgpoolAdmin.username }}
+          - name: PGPOOL_ADMIN_PASSWORD
+            value: {{ .Values.users.pgpoolAdmin.password }}
+          - name: PGPOOL_SR_CHECK_USER
+            value: {{ .Values.users.srCheck.username }}
+          - name: PGPOOL_SR_CHECK_PASSWORD
+            value: {{ .Values.users.srCheck.password }}
+          - name: PGPOOL_HEALTH_CHECK_USER
+            value: {{ .Values.users.healthCheck.username }}
+          - name: PGPOOL_HEALTH_CHECK_PASSWORD
+            value: {{ .Values.users.healthCheck.password }} 
+          - name: PGPOOL_BACKEND_NODES
+            value: "{{ .Values.app.name }}-master-service:5432,{{ .Values.app.name }}-replica-service-0:5432"
+        volumeMounts:
+          - name: pgpool-config-volume
+            mountPath: /etc/pgpool
+            readOnly: true
+      volumes:
+        - name: pgpool-config-volume
+          configMap:
+            name: {{ .Values.app.name }}-pgpool-config

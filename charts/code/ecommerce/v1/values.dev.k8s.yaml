@@ -1,0 +1,4 @@
+env:
+  RUN_MODE: k8s #local,k8s,ci
+  ENV: development
+  GOOGLE_SERVICE_ACCOUNT_JSON_PATH: '/opt/app/creds/google-service-account.json'

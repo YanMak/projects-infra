@@ -1,0 +1,82 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Values.app.name }}-master
+spec:
+  serviceName: {{ .Values.app.name }}-master
+  replicas: 1  # Один мастер
+  selector:
+    matchLabels:
+      app: {{ .Values.app.name }}
+      role: master
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.app.name }}
+        role: master
+    spec:
+      containers:
+      - name: postgres
+        image: "{{ .Values.postgres.image }}:{{ .Values.postgres.imageVersion }}"
+        ports:
+          - containerPort: {{ .Values.postgres.port }}
+        env:
+          - name: POSTGRESQL_DATABASE
+            value: {{ .Values.postgres.db }}
+          #- name: POSTGRES_DB
+          #  value: {{ .Values.postgres.db }}   
+          - name: POSTGRESQL_PASSWORD
+            value: {{ .Values.users.db.password }} 
+          - name: POSTGRESQL_USER
+            value: {{ .Values.users.db.username }} 
+          - name: POSTGRESQL_USERNAME
+            value: {{ .Values.postgres.db }} 
+          - name: PGPOOL_ADMIN_USERNAME
+            value: {{ .Values.users.pgpoolAdmin.username }}
+          - name: PGPOOL_ADMIN_PASSWORD
+            value: {{ .Values.users.pgpoolAdmin.password }}
+          - name: PGPOOL_SR_CHECK_USER
+            value: {{ .Values.users.srCheck.username }}
+          - name: PGPOOL_SR_CHECK_PASSWORD
+            value: {{ .Values.users.srCheck.password }}
+          - name: PGPOOL_HEALTH_CHECK_USER
+            value: {{ .Values.users.healthCheck.username }}
+          - name: PGPOOL_HEALTH_CHECK_PASSWORD
+            value: {{ .Values.users.healthCheck.password }}  
+          - name: POSTGRES_REPLICATION_MODE
+            value: "master" 
+            name: POSTGRESQL_HBA_FILE  
+            value: /etc/postgresql/pg_hba.conf  
+            
+          #- name: POSTGRESQL_VOLUME_DIR  
+          #  value: /var/lib/postgresql/data
+          #- name: POSTGRESQL_VOLUME_DIR  
+          #  value: /var/lib/postgresql/data
+        volumeMounts:
+          - name: {{ .Values.app.name }}-storage
+            mountPath: /var/lib/postgresql/data # is standard
+            # mountPath: /bitnami/postgresql/data
+          - name: {{ .Values.app.name }}-master-config-volume
+            mountPath: /etc/postgresql/postgresql.conf # standart for postge images but not for bitnami
+            # mountPath: /opt/bitnami/postgresql/conf/postgresql.conf
+            subPath: postgresql.conf
+            readOnly: true
+          - name: {{ .Values.app.name }}-master-config-volume
+            mountPath: /etc/postgresql/pg_hba.conf
+            # mountPath: /opt/bitnami/postgresql/conf/pg_hba.conf
+            subPath: pg_hba.conf
+            readOnly: true
+      volumes:
+        - name: {{ .Values.app.name }}-master-config-volume
+          configMap:
+            name: {{ .Values.app.name }}-master-config
+
+  volumeClaimTemplates:
+    - metadata:
+        name: {{ .Values.app.name }}-storage
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: {{ .Values.postgres.pvc.resources.requests.storage | quote }}

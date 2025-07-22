@@ -1,0 +1,41 @@
+app:
+  name: pg-cluster
+
+postgres:
+  master:
+    image: postgres
+    imageVersion: 16
+  replica:    
+    image: bitnami/postgresql
+    imageVersion: "16.0.0"
+  #image: bitnami/postgresql
+  #imageVersion: latest
+  replicas: 3 # if 0 than only master, if 1 then master + 1 replica 
+  port: 5432
+  db: postgres
+  pvc:
+    resources:
+      requests:
+        storage: 8Gi  # Размер PVC
+
+pgpool:
+  image: bitnami/pgpool
+  imageVersion: latest
+
+users:
+  db:
+    username: postgres
+    password: postgres # Пароль для PostgreSQL
+  replication:
+    username: postgres            # Учетная запись для репликации
+    password: postgres  
+      # Пароль для репликации    
+  pgpoolAdmin:
+    username: postgres              # Учетная запись администратора Pgpool-II
+    password: postgres  # Пароль администратора Pgpool-II
+  healthCheck:
+    username: postgres            
+    password: postgres  
+  srCheck:
+    username: postgres            # Учетная запись для репликации
+    password: postgres 

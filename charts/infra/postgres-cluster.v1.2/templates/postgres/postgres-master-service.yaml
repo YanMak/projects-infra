@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.app.name }}-master-service
+spec:
+  ports:
+    - port: {{ .Values.postgres.port }}
+      targetPort: {{ .Values.postgres.port }}
+  clusterIP: None  # Указание на Headless Service для StatefulSet
+  selector:       
+    app: {{ .Values.app.name }}-postgres
+    role: master

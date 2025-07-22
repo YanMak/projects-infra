@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.app.backend.apiGateway.name }}-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{ toYaml .Values.app.backend.apiGateway.labels }}
+  template:
+    metadata:
+      labels:
+        {{ toYaml .Values.app.backend.apiGateway.labels }}
+    spec:
+      containers:
+        - name: {{ .Values.app.backend.apiGateway.name }}
+          image: "{{ .Values.app.backend.apiGateway.image }}:{{ .Values.app.backend.apiGateway.imageVersion }}"
+          resources: {{ toYaml .Values.app.backend.apiGateway.resources | nindent 12 }} 
+          env:
+          {{- range .Values.app.backend.apiGateway.env }}
+          {{- $data := dict "name" $.Values.app.backend.apiGateway.name "env" . }}
+          {{- include "env.template" $data | indent 12 }}
+          {{- end }}
+            - name: VAULT_ESO_KAFKA_SASL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: kafka-sasl-creds
+                  key: KAFKA_SASL_PASSWORD
+            - name: APP-NAME
+              value: {{ .Values.app.backend.apiGateway.name }}      
+
+          ports: 
+            - containerPort: {{ .Values.app.backend.apiGateway.port }}
+          volumeMounts:
+            - name: google-sa-volume
+              #mountPath: /app/creds/google-service-account.json
+              mountPath: {{.Values.env.GOOGLE_SERVICE_ACCOUNT_JSON_PATH }}
+              subPath: google-service-account.json
+              # subPath: {{ .Values.files.creds.GOOGLE_SERVICE_ACCOUNT_JSON.filename }} Unfortunatelly its encrypted
+
+      volumes:
+        - name: google-sa-volume
+          secret:
+            secretName: {{ .Values.app.backend.apiGateway.name }}-secret
+            items:
+              - key: GOOGLE_SERVICE_ACCOUNT_JSON
+                path: google-service-account.json
+                # path: {{ .Values.files.creds.GOOGLE_SERVICE_ACCOUNT_JSON.filename }} Unfortunatelly its encrypted

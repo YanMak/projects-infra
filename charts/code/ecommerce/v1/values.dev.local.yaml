@@ -1,0 +1,5 @@
+env:
+  RUN_MODE: local #local,k8s,ci
+  ENV: development
+  GOOGLE_SERVICE_ACCOUNT_JSON_PATH: '/code/kube/secrets/ecommerce/v1/dev/output/creds/google-service-account.json'
+  #GOOGLE_SERVICE_KEY_PATH: ../../../../../../secrets/ecommerce/v1/dev/output/creds/google-service-account.json

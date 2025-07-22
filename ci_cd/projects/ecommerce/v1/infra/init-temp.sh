@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+VALUES="$1"
+VALUES_DEV_LOCAL="$2"
+SECRETS_DEV="$3"
+SECRETS_DEV_LOCAL="$4"
+TMPDIR="$5"
+
+# rm -rf "$TMPDIR/*"
+mkdir -p "$TMPDIR"
+cp "$VALUES" "$TMPDIR"
+cp "$VALUES_DEV_LOCAL" "$TMPDIR"
+# cp "$SECRETS_DEV" "$TMPDIR"
+# cp "$SECRETS_DEV_LOCAL" "$TMPDIR"
+sops -d "$SECRETS_DEV" > "$TMPDIR/$(basename $SECRETS_DEV .yaml).decrypted.yaml"
+sops -d "$SECRETS_DEV_LOCAL" > "$TMPDIR/$(basename $SECRETS_DEV_LOCAL .yaml).decrypted.yaml"
